@@ -13,7 +13,7 @@
   </tr>
 </table>
 
-A lightweight alternative to paid “rainbow braces” plugins: it colors matching brackets by nesting depth so you can read deeply nested code faster.
+A lightweight alternative to paid “rainbow brackets” plugins: it colors matching brackets by nesting depth so you can read deeply nested code faster.
 
 ## Screenshot
 <p align="center">
