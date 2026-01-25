@@ -90,11 +90,10 @@ Output ZIP:
 build/distributions/*.zip
 ```
 
-## Notes
-
-- Rider C# editor is special (ReSharper backend). Some Rider builds expose fewer lexer/PSI features in the frontend editor.
-  The plugin has a manual fallback, but behavior can still vary across Rider versions.
-- If you see “not compatible with IDE build …” during install, adjust the build range in `patchPluginXml` (`sinceBuild` / `untilBuild`) and rebuild the ZIP.
+> [!NOTE]
+>- Rider C# editor is special (ReSharper backend). Some Rider builds expose fewer lexer/PSI features in the frontend editor.
+>The plugin has a manual fallback, but behavior can still vary across Rider versions.
+>- If you see “not compatible with IDE build …” during install, adjust the build range in `patchPluginXml` (`sinceBuild` / `untilBuild`) and rebuild the ZIP.
 
 ## Open Source
 MIT
