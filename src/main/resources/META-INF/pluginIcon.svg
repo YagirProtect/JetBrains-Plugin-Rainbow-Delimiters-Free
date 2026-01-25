@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+  <!-- фон (удали rect если хочешь прозрачный) -->
+  <rect x="2" y="2" width="36" height="36" rx="9" fill="#141414"></rect>
+
+  <!-- OUTER -->
+  <path d="M16 8 H10 V32 H16" fill="none" stroke="#FF4D6D" stroke-width="3.2" stroke-linecap="square" stroke-linejoin="miter"></path>
+  <path d="M24 8 H30 V32 H24" fill="none" stroke="#FF4D6D" stroke-width="3.2" stroke-linecap="square" stroke-linejoin="miter"></path>
+
+  <!-- MIDDLE -->
+  <path d="M18 11 H13 V29 H18" fill="none" stroke="#3DFFB5" stroke-width="2.8" stroke-linecap="square" stroke-linejoin="miter"></path>
+  <path d="M22 11 H27 V29 H22" fill="none" stroke="#3DFFB5" stroke-width="2.8" stroke-linecap="square" stroke-linejoin="miter"></path>
+
+  <!-- INNER -->
+  <path d="M19 14 H16 V26 H19" fill="none" stroke="#4D9DFF" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter"></path>
+  <path d="M21 14 H24 V26 H21" fill="none" stroke="#4D9DFF" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter"></path>
+</svg>

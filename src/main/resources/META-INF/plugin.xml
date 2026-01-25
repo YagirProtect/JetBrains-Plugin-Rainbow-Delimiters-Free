@@ -1,0 +1,33 @@
+<idea-plugin>
+    <id>dev.yaro.rainbowbraces</id>
+    <name>Free Rainbow Braces</name>
+        <vendor url="https://www.yagir.xyz">Yagir.inc</vendor>
+    <depends>com.intellij.modules.lang</depends>
+
+    <idea-version since-build="243" until-build="253.*"/>
+
+    <description><![CDATA[
+        <b>Simplest</b> delimiter coloring free!
+
+
+        Rainbow coloring for (), [], {} based on nesting level.
+        Works in multiple IDEs (RustRover, Rider, IntelliJ-based).
+
+        Features
+
+        - Rainbow coloring for ()[]{} by nesting level
+
+        - Works in Rust, C#, Java, Kotlin, C/C++, JS/TS and more
+
+        - Skips strings and comments when possible (lexer-based)
+
+        - Lightweight: highlights only visible area
+
+
+        <b>Open Source</b>
+      ]]></description>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <editorFactoryListener implementation="dev.yaro.rainbowbraces.RainbowBracesEditorListener"/>
+    </extensions>
+</idea-plugin>
