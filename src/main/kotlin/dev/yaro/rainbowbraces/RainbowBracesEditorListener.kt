@@ -1,7 +1,5 @@
 ﻿package dev.yaro.rainbowbraces
 
-
-
 import com.intellij.lang.LanguageParserDefinitions
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.Editor
@@ -57,7 +55,6 @@ class RainbowBracesEditorListener : EditorFactoryListener {
 
         private const val MAX_FILE_CHARS = 1_500_000
         private const val MARGIN = 6000
-
         private const val UPDATE_DELAY_MS = 80
     }
 
@@ -95,7 +92,6 @@ class RainbowBracesEditorListener : EditorFactoryListener {
         editor.scrollingModel.removeVisibleAreaListener(state.visibleAreaListener)
 
         state.alarm.cancelAllRequests()
-
         state.highlighters.forEach { editor.markupModel.removeHighlighter(it) }
         state.highlighters.clear()
 
@@ -109,10 +105,7 @@ class RainbowBracesEditorListener : EditorFactoryListener {
 
         val vf = FileDocumentManager.getInstance().getFile(doc) ?: return false
         val ext = vf.extension?.lowercase() ?: return false
-
         if (ext !in ENABLED_EXT) return false
-
-        if (editor.project == null) return false
 
         return true
     }
@@ -139,12 +132,11 @@ class RainbowBracesEditorListener : EditorFactoryListener {
         val doc = editor.document
         val (rangeStart, rangeEnd) = visibleOffsets(editor, doc.textLength)
 
-        val marks = computeMarksSmart(editor, rangeStart, rangeEnd)
+        val marks = computeMarksPreferLexer(editor, rangeStart, rangeEnd)
 
         state.highlighters.forEach { editor.markupModel.removeHighlighter(it) }
         state.highlighters.clear()
 
-        // Ставим новые
         for (m in marks) {
             val attrs = TextAttributes(
                 PALETTE[m.colorIndex % PALETTE.size],
@@ -178,28 +170,30 @@ class RainbowBracesEditorListener : EditorFactoryListener {
     private data class Mark(val offset: Int, val colorIndex: Int)
     private data class Open(val ch: Char, val colorIndex: Int)
 
-    private fun computeMarksSmart(editor: Editor, rangeStart: Int, rangeEnd: Int): List<Mark> {
-        val project = editor.project ?: return emptyList()
+    private fun computeMarksPreferLexer(editor: Editor, rangeStart: Int, rangeEnd: Int): List<Mark> {
         val doc = editor.document
-        val vf = FileDocumentManager.getInstance().getFile(doc) ?: return emptyList()
+        val text = doc.charsSequence
+        val scanEnd = min(doc.textLength, rangeEnd)
 
-        val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc) ?: return emptyList()
+        val project = editor.project
+        val vf = FileDocumentManager.getInstance().getFile(doc)
+        if (project == null || vf == null) {
+            // чисто ручной режим
+            return computeMarksManual(text, scanEnd, rangeStart, rangeEnd)
+        }
+
+        val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
+            ?: return computeMarksManual(text, scanEnd, rangeStart, rangeEnd)
+
         val language = psiFile.viewProvider.baseLanguage
-
         val parserDef = LanguageParserDefinitions.INSTANCE.forLanguage(language)
         val commentTokens: TokenSet = parserDef?.commentTokens ?: TokenSet.EMPTY
         val stringTokens: TokenSet = parserDef?.stringLiteralElements ?: TokenSet.EMPTY
 
         val highlighter = SyntaxHighlighterFactory.getSyntaxHighlighter(language, project, vf)
-        val lexer = highlighter?.highlightingLexer
+            ?: return computeMarksManual(text, scanEnd, rangeStart, rangeEnd)
 
-        if (lexer == null) {
-            return computeMarksNaive(doc.charsSequence, rangeStart, rangeEnd)
-        }
-
-        val text = doc.charsSequence
-        val scanEnd = min(doc.textLength, rangeEnd)
-
+        val lexer = highlighter.highlightingLexer
         lexer.start(text, 0, scanEnd)
 
         val out = ArrayList<Mark>(512)
@@ -211,7 +205,6 @@ class RainbowBracesEditorListener : EditorFactoryListener {
             val te = lexer.tokenEnd
 
             val ignored = commentTokens.contains(tt) || stringTokens.contains(tt)
-
             if (!ignored) {
                 val from = max(0, ts)
                 val to = min(scanEnd, te)
@@ -225,13 +218,8 @@ class RainbowBracesEditorListener : EditorFactoryListener {
                             if (i in rangeStart..rangeEnd) out.add(Mark(i, color))
                         }
                         '}', ')', ']' -> {
-                            val open = if (stack.isNotEmpty() && matches(stack.last().ch, c)) {
-                                stack.removeLast()
-                            } else null
-
-                            if (open != null && i in rangeStart..rangeEnd) {
-                                out.add(Mark(i, open.colorIndex))
-                            }
+                            val open = if (stack.isNotEmpty() && matches(stack.last().ch, c)) stack.removeLast() else null
+                            if (open != null && i in rangeStart..rangeEnd) out.add(Mark(i, open.colorIndex))
                         }
                     }
                 }
@@ -243,28 +231,120 @@ class RainbowBracesEditorListener : EditorFactoryListener {
         return out
     }
 
-    private fun computeMarksNaive(text: CharSequence, rangeStart: Int, rangeEnd: Int): List<Mark> {
+    private enum class Mode {
+        CODE, LINE_COMMENT, BLOCK_COMMENT, STRING, CHAR, CS_VERBATIM, RUST_RAW
+    }
+
+    private fun computeMarksManual(text: CharSequence, scanEnd: Int, rangeStart: Int, rangeEnd: Int): List<Mark> {
         val out = ArrayList<Mark>(512)
         val stack = ArrayDeque<Open>()
 
-        val end = min(text.length, rangeEnd)
-        for (i in 0 until end) {
-            val c = text[i]
-            when (c) {
-                '{', '(', '[' -> {
-                    val color = stack.size % PALETTE.size
-                    stack.addLast(Open(c, color))
-                    if (i in rangeStart..rangeEnd) out.add(Mark(i, color))
-                }
-                '}', ')', ']' -> {
-                    val open = if (stack.isNotEmpty() && matches(stack.last().ch, c)) {
-                        stack.removeLast()
-                    } else null
+        var mode = Mode.CODE
 
-                    if (open != null && i in rangeStart..rangeEnd) out.add(Mark(i, open.colorIndex))
+        // Rust raw string: r#" ... "# (hashCount>=0)
+        var rustRawHashes = 0
+
+        var i = 0
+        while (i < scanEnd) {
+            val c = text[i]
+            val n = if (i + 1 < scanEnd) text[i + 1] else '\u0000'
+            val n2 = if (i + 2 < scanEnd) text[i + 2] else '\u0000'
+
+            when (mode) {
+                Mode.CODE -> {
+                    // --- comments ---
+                    if (c == '/' && n == '/') { mode = Mode.LINE_COMMENT; i += 2; continue }
+                    if (c == '/' && n == '*') { mode = Mode.BLOCK_COMMENT; i += 2; continue }
+
+                    // --- C# strings ---
+                    // @"..."
+                    if (c == '@' && n == '"') { mode = Mode.CS_VERBATIM; i += 2; continue }
+                    // $@"..." or @$"..."
+                    if (c == '$' && n == '@' && n2 == '"') { mode = Mode.CS_VERBATIM; i += 3; continue }
+                    if (c == '@' && n == '$' && n2 == '"') { mode = Mode.CS_VERBATIM; i += 3; continue }
+
+                    // normal "..."
+                    if (c == '"') { mode = Mode.STRING; i++; continue }
+                    // char 'a'
+                    if (c == '\'') { mode = Mode.CHAR; i++; continue }
+
+                    // --- Rust raw strings: r###" ... "### ---
+                    if (c == 'r') {
+                        var j = i + 1
+                        var hashes = 0
+                        while (j < scanEnd && text[j] == '#') { hashes++; j++ }
+                        if (j < scanEnd && text[j] == '"') {
+                            rustRawHashes = hashes
+                            mode = Mode.RUST_RAW
+                            i = j + 1
+                            continue
+                        }
+                    }
+
+                    // --- braces ---
+                    when (c) {
+                        '{', '(', '[' -> {
+                            val color = stack.size % PALETTE.size
+                            stack.addLast(Open(c, color))
+                            if (i in rangeStart..rangeEnd) out.add(Mark(i, color))
+                        }
+                        '}', ')', ']' -> {
+                            val open = if (stack.isNotEmpty() && matches(stack.last().ch, c)) stack.removeLast() else null
+                            if (open != null && i in rangeStart..rangeEnd) out.add(Mark(i, open.colorIndex))
+                        }
+                    }
+
+                    i++
+                }
+
+                Mode.LINE_COMMENT -> {
+                    if (c == '\n') mode = Mode.CODE
+                    i++
+                }
+
+                Mode.BLOCK_COMMENT -> {
+                    if (c == '*' && n == '/') { mode = Mode.CODE; i += 2 } else i++
+                }
+
+                Mode.STRING -> {
+                    if (c == '\\') { i = min(scanEnd, i + 2); continue } // escape
+                    if (c == '"') mode = Mode.CODE
+                    i++
+                }
+
+                Mode.CHAR -> {
+                    if (c == '\\') { i = min(scanEnd, i + 2); continue }
+                    if (c == '\'') mode = Mode.CODE
+                    i++
+                }
+
+                Mode.CS_VERBATIM -> {
+                    // C# verbatim: "" = escaped quote
+                    if (c == '"' && n == '"') { i += 2; continue }
+                    if (c == '"') mode = Mode.CODE
+                    i++
+                }
+
+                Mode.RUST_RAW -> {
+                    // end: " + hashes
+                    if (c == '"') {
+                        var ok = true
+                        var k = 0
+                        while (k < rustRawHashes) {
+                            if (i + 1 + k >= scanEnd || text[i + 1 + k] != '#') { ok = false; break }
+                            k++
+                        }
+                        if (ok) {
+                            mode = Mode.CODE
+                            i += 1 + rustRawHashes
+                            continue
+                        }
+                    }
+                    i++
                 }
             }
         }
+
         return out
     }
 

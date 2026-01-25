@@ -7,25 +7,24 @@
     <idea-version since-build="243" until-build="253.*"/>
 
     <description><![CDATA[
-        <b>Simplest</b> delimiter coloring free!
-
-
-        Rainbow coloring for (), [], {} based on nesting level.
+      <b>Simplest</b> delimiter coloring free!
+      <p>
+        Rainbow coloring for <code>()</code>, <code>[]</code>, <code>{}</code> based on nesting level.<br/>
         Works in multiple IDEs (RustRover, Rider, IntelliJ-based).
+      </p>
 
-        Features
+      <b>Features</b>
+      <ul>
+        <li>Rainbow coloring for <code>()[]{} </code> by nesting level</li>
+        <li>Works in Rust, C#, Java, Kotlin, C/C++, JS/TS and more</li>
+        <li>Skips strings and comments when possible (lexer-based)</li>
+        <li>Lightweight: highlights only visible area</li>
+      </ul>
 
-        - Rainbow coloring for ()[]{} by nesting level
+      <b>Open Source</b>
+      <a>https://github.com/YagirProtect/JetBrains-Plugin-Rainbow-Delimiters-Free</a>
+    ]]></description>
 
-        - Works in Rust, C#, Java, Kotlin, C/C++, JS/TS and more
-
-        - Skips strings and comments when possible (lexer-based)
-
-        - Lightweight: highlights only visible area
-
-
-        <b>Open Source</b>
-      ]]></description>
 
     <extensions defaultExtensionNs="com.intellij">
         <editorFactoryListener implementation="dev.yaro.rainbowbraces.RainbowBracesEditorListener"/>
