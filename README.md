@@ -4,7 +4,11 @@
       <img src="src/main/resources/META-INF/pluginIcon.svg" width="96" height="96" alt="Free Rainbow Braces icon" />
     </td>
     <td>
-      <h1>Free Rainbow Brackets ​(Delimiters)​</h1>
+      <h1>
+        <a href="https://plugins.jetbrains.com/plugin/29914-free-rainbow-brackets-delimiters">
+            Free Rainbow Brackets (Delimiters)
+        </a>
+      </h1>
       <p>
         <b>Simplest delimiter coloring free!</b> Rainbow coloring for <code>()</code>, <code>[]</code>, <code>{}</code>
         based on nesting level. Works in RustRover, Rider, and other IntelliJ-based IDEs.
