@@ -39,7 +39,7 @@ class RainbowBracesEditorListener : EditorFactoryListener {
             "java", "kt", "kts",
             "c", "h", "cc", "cpp", "cxx", "hpp", "hxx",
             "js", "ts", "jsx", "tsx",
-            "py", "go", "swift", "lua", "json", "hlsl", "shader"
+            "py", "go", "swift", "lua", "json", "hlsl", "shader", "php", "go"
         )
 
         private val PALETTE: Array<Color> = arrayOf(
