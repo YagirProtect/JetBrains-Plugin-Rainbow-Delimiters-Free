@@ -51,7 +51,7 @@ The plugin is enabled for common code extensions (you can change the list in cod
 - JVM: `.java`, `.kt`, `.kts`
 - C/C++: `.c`, `.h`, `.cc`, `.cpp`, `.cxx`, `.hpp`, `.hxx`
 - JS/TS: `.js`, `.ts`, `.jsx`, `.tsx`
-- Other: `.py`, `.go`, `.swift`, `lua`, `json`, `hlsl`, `shader`, `go`, `php`
+- Other: `.py`, `.go`, `.swift`, `lua`, `json`, `hlsl`, `shader`, `php`
 
 To customize: edit `ENABLED_EXT` in `src/main/kotlin/dev/yaro/rainbowbraces/RainbowBracesEditorListener.kt`.
 
