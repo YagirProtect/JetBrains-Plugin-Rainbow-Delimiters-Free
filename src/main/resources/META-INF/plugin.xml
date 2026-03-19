@@ -1,6 +1,6 @@
 <idea-plugin>
     <id>dev.yaro.rainbowbraces</id>
-    <name>Free Rainbow Brackets (Delimiters)</name>
+    <name>Simple Rainbow Delimiters</name>
         <vendor url="https://www.yagir.xyz">Yagir.inc</vendor>
     <depends>com.intellij.modules.lang</depends>
 

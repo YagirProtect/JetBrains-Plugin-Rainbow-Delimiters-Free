@@ -1,1 +1,1 @@
-rootProject.name = "Rainbow-Delimiters-Free"
+rootProject.name = "Rainbow-Delimiters"
