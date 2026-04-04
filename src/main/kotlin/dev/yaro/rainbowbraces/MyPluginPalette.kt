@@ -17,7 +17,6 @@ object MyPluginPalette {
 
     fun adjustColor(color: Color, saturation: Float, brightness: Float): Color {
         val hsb = Color.RGBtoHSB(color.red, color.green, color.blue, null)
-        // 保持原始色相，应用用户设置的饱和度和亮度
         return Color.getHSBColor(
             hsb[0],
             saturation.coerceIn(0f, 1f),
@@ -25,16 +24,25 @@ object MyPluginPalette {
         )
     }
 
+    /**
+     * 根据指定的饱和度和亮度生成调色板（用于预览）
+     */
+    fun generatePalette(saturation: Float, brightness: Float): Array<JBColor> {
+        return BASE_PALETTE.map { (light, dark) ->
+            val adjustedLight = adjustColor(light, saturation, brightness)
+            val adjustedDark = adjustColor(dark, saturation, brightness)
+            JBColor(adjustedLight, adjustedDark)
+        }.toTypedArray()
+    }
+
+    /**
+     * 使用当前已保存的设置生成调色板（实际应用于编辑器）
+     */
     val PALETTE: Array<JBColor>
         get() {
             val settings = runCatching { SaturationSettings.getInstance() }.getOrNull()
             val saturation = settings?.saturation ?: 1.0f
             val brightness = settings?.brightness ?: 1.0f
-
-            return BASE_PALETTE.map { (light, dark) ->
-                val adjustedLight = adjustColor(light, saturation, brightness)
-                val adjustedDark = adjustColor(dark, saturation, brightness)
-                JBColor(adjustedLight, adjustedDark)
-            }.toTypedArray()
+            return generatePalette(saturation, brightness)
         }
 }

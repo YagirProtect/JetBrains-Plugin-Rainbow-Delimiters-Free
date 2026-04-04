@@ -1,7 +1,8 @@
 package dev.yaro.rainbowbraces
 
 import com.intellij.openapi.options.SearchableConfigurable
-import java.awt.BorderLayout
+import com.intellij.ui.JBColor
+import java.awt.*
 import javax.swing.*
 import javax.swing.BoxLayout
 
@@ -12,6 +13,7 @@ class SaturationSettingsConfigurable : SearchableConfigurable {
     private lateinit var saturationLabel: JLabel
     private lateinit var brightnessSlider: JSlider
     private lateinit var brightnessLabel: JLabel
+    private lateinit var previewPanel: JPanel   // 预览面板
 
     override fun getId() = "rainbow.braces.saturation"
     override fun getDisplayName() = "彩虹括号饱和度与亮度"
@@ -34,6 +36,7 @@ class SaturationSettingsConfigurable : SearchableConfigurable {
         saturationRow.add(saturationLabel, BorderLayout.EAST)
         saturationSlider.addChangeListener {
             saturationLabel.text = "${saturationSlider.value}%"
+            updatePreview()   // 实时更新预览
         }
         panel!!.add(saturationRow)
 
@@ -49,10 +52,48 @@ class SaturationSettingsConfigurable : SearchableConfigurable {
         brightnessRow.add(brightnessLabel, BorderLayout.EAST)
         brightnessSlider.addChangeListener {
             brightnessLabel.text = "${brightnessSlider.value}%"
+            updatePreview()   // 实时更新预览
         }
         panel!!.add(brightnessRow)
 
+        // 预览区域
+        previewPanel = JPanel().apply {
+            layout = FlowLayout(FlowLayout.LEFT, 10, 10)
+            border = BorderFactory.createTitledBorder("颜色预览")
+            preferredSize = Dimension(0, 80)
+        }
+        panel!!.add(previewPanel)
+
+        // 初始化预览
+        updatePreview()
+
         return panel!!
+    }
+
+    /**
+     * 根据当前滑块的值生成预览色块
+     */
+    private fun updatePreview() {
+        val currentSaturation = saturationSlider.value / 100f
+        val currentBrightness = brightnessSlider.value / 100f
+        val palette = MyPluginPalette.generatePalette(currentSaturation, currentBrightness)
+
+        previewPanel.removeAll()
+        for (color in palette) {
+            val colorPanel = object : JPanel() {
+                override fun paintComponent(g: Graphics) {
+                    super.paintComponent(g)
+                    g.color = color
+                    g.fillRect(0, 0, width, height)
+                    g.color = JBColor.GRAY
+                    g.drawRect(0, 0, width - 1, height - 1)
+                }
+            }
+            colorPanel.preferredSize = Dimension(40, 40)
+            previewPanel.add(colorPanel)
+        }
+        previewPanel.revalidate()
+        previewPanel.repaint()
     }
 
     override fun isModified(): Boolean {
@@ -68,6 +109,7 @@ class SaturationSettingsConfigurable : SearchableConfigurable {
     override fun reset() {
         saturationSlider.value = (settings.saturation * 100).toInt()
         brightnessSlider.value = (settings.brightness * 100).toInt()
+        updatePreview()
     }
 
     override fun disposeUIResources() {
