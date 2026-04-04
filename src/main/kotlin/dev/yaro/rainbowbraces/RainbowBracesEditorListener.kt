@@ -37,9 +37,10 @@ class RainbowBracesEditorListener : EditorFactoryListener {
         private val ENABLED_EXT = setOf(
             "rs", "cs",
             "java", "kt", "kts",
-            "c", "h", "cc", "cpp", "cxx", "hpp", "hxx",
+            "c", "h", "cc", "cpp", "cxx", "hpp", "hh", "hxx", "ixx", "mxx", "cppm", "ccm", "cxxm", "c++m"
             "js", "ts", "jsx", "tsx",
-            "py", "go", "swift", "lua", "json", "hlsl", "shader", "php", "go"
+            "py", "go", "swift", "lua", "json", "hlsl", "shader", "php", "go",
+            "glsl", "vert", "vsh", "tesc", "tese", "geom", "gsh", "frag", "fsh", "comp"
         )
 
         private val PALETTE: Array<Color> = arrayOf(
