@@ -1,10 +1,20 @@
 <idea-plugin>
     <id>dev.yaro.rainbowbraces</id>
     <name>Simple Rainbow Delimiters</name>
-        <vendor url="https://www.yagir.xyz">Yagir.inc</vendor>
+    <vendor url="https://www.yagir.xyz">Yagir.inc</vendor>
     <depends>com.intellij.modules.lang</depends>
 
     <idea-version since-build="243" until-build="253.*"/>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <editorFactoryListener implementation="dev.yaro.rainbowbraces.RainbowBracesEditorListener"/>
+
+        <applicationConfigurable
+                id="dev.yaro.rainbowbraces.SaturationSettings"
+                displayName="Simple Rainbow Delimiters Setting"
+                instance="dev.yaro.rainbowbraces.SaturationSettingsConfigurable"
+                parentId="Editor"/>
+    </extensions>
 
     <description><![CDATA[
       <b>Simplest</b> delimiter coloring free!
@@ -24,14 +34,4 @@
       <b>Open Source</b>
       <a>https://github.com/YagirProtect/JetBrains-Plugin-Rainbow-Delimiters-Free</a>
     ]]></description>
-
-    <configurable
-            id="PaletteSaturationSettings"
-            displayName="调色板饱和度"
-            instance="dev.yaro.rainbowbraces.SaturationSettingsConfigurable"
-            parentId="other.settings"/>
-
-    <extensions defaultExtensionNs="com.intellij">
-        <editorFactoryListener implementation="dev.yaro.rainbowbraces.RainbowBracesEditorListener"/>
-    </extensions>
 </idea-plugin>

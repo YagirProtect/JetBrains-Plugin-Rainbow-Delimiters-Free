@@ -1,46 +1,78 @@
 package dev.yaro.rainbowbraces
 
-import com.intellij.openapi.options.Configurable
+import com.intellij.openapi.options.SearchableConfigurable
+import java.awt.BorderLayout
 import javax.swing.*
-import java.awt.*
+import javax.swing.BoxLayout
 
-class SaturationSettingsConfigurable : Configurable {
+class SaturationSettingsConfigurable : SearchableConfigurable {
     private val settings = SaturationSettings.getInstance()
     private var panel: JPanel? = null
     private lateinit var saturationSlider: JSlider
-    private lateinit var valueLabel: JLabel
+    private lateinit var saturationLabel: JLabel
+    private lateinit var brightnessSlider: JSlider
+    private lateinit var brightnessLabel: JLabel
 
-    override fun getDisplayName(): String = "调色板饱和度设置"
+    override fun getId() = "rainbow.braces.saturation"
+    override fun getDisplayName() = "彩虹括号饱和度与亮度"
 
-    override fun createComponent(): JComponent? {
-        panel = JPanel(BorderLayout(10, 10)).apply {
+    override fun createComponent(): JComponent {
+        panel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
             border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
-            add(JLabel("颜色饱和度："), BorderLayout.WEST)
-
-            saturationSlider = JSlider(0, 100, (settings.saturation * 100).toInt()).apply {
-                majorTickSpacing = 20
-                paintTicks = true
-                paintLabels = true
-                addChangeListener {
-                    val value = saturationSlider.value / 100f
-                    valueLabel.text = "当前：${(value * 100).toInt()}%"
-                }
-            }
-            add(saturationSlider, BorderLayout.CENTER)
-
-            valueLabel = JLabel("当前：${(settings.saturation * 100).toInt()}%")
-            add(valueLabel, BorderLayout.EAST)
         }
-        return panel
+
+        // 饱和度行
+        val saturationRow = JPanel(BorderLayout(10, 10))
+        saturationRow.add(JLabel("饱和度:"), BorderLayout.WEST)
+        saturationSlider = JSlider(0, 100, (settings.saturation * 100).toInt())
+        saturationSlider.majorTickSpacing = 20
+        saturationSlider.paintTicks = true
+        saturationSlider.paintLabels = true
+        saturationRow.add(saturationSlider, BorderLayout.CENTER)
+        saturationLabel = JLabel("${(settings.saturation * 100).toInt()}%")
+        saturationRow.add(saturationLabel, BorderLayout.EAST)
+        saturationSlider.addChangeListener {
+            saturationLabel.text = "${saturationSlider.value}%"
+        }
+        panel!!.add(saturationRow)
+
+        // 亮度行
+        val brightnessRow = JPanel(BorderLayout(10, 10))
+        brightnessRow.add(JLabel("亮度:"), BorderLayout.WEST)
+        brightnessSlider = JSlider(0, 100, (settings.brightness * 100).toInt())
+        brightnessSlider.majorTickSpacing = 20
+        brightnessSlider.paintTicks = true
+        brightnessSlider.paintLabels = true
+        brightnessRow.add(brightnessSlider, BorderLayout.CENTER)
+        brightnessLabel = JLabel("${(settings.brightness * 100).toInt()}%")
+        brightnessRow.add(brightnessLabel, BorderLayout.EAST)
+        brightnessSlider.addChangeListener {
+            brightnessLabel.text = "${brightnessSlider.value}%"
+        }
+        panel!!.add(brightnessRow)
+
+        return panel!!
+    }
+
+    override fun isModified(): Boolean {
+        return saturationSlider.value != (settings.saturation * 100).toInt() ||
+                brightnessSlider.value != (settings.brightness * 100).toInt()
     }
 
     override fun apply() {
         settings.saturation = saturationSlider.value / 100f
-        com.intellij.util.ui.UIUtil.dispatchAllInvocationEvents()
+        settings.brightness = brightnessSlider.value / 100f
     }
 
-    override fun isModified(): Boolean = saturationSlider.value != (settings.saturation * 100).toInt()
-    override fun reset() = saturationSlider.value = (settings.saturation * 100).toInt()
-    override fun disposeUIResources() { panel = null }
-    override fun getHelpTopic(): String? = null
+    override fun reset() {
+        saturationSlider.value = (settings.saturation * 100).toInt()
+        brightnessSlider.value = (settings.brightness * 100).toInt()
+    }
+
+    override fun disposeUIResources() {
+        panel = null
+    }
+
+    override fun getHelpTopic() = null
 }
