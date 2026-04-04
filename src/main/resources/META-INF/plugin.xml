@@ -25,6 +25,11 @@
       <a>https://github.com/YagirProtect/JetBrains-Plugin-Rainbow-Delimiters-Free</a>
     ]]></description>
 
+    <configurable
+            id="PaletteSaturationSettings"
+            displayName="调色板饱和度"
+            instance="dev.yaro.rainbowbraces.SaturationSettingsConfigurable"
+            parentId="other.settings"/>
 
     <extensions defaultExtensionNs="com.intellij">
         <editorFactoryListener implementation="dev.yaro.rainbowbraces.RainbowBracesEditorListener"/>

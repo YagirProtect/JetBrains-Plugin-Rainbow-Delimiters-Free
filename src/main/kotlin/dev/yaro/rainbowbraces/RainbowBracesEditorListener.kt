@@ -43,17 +43,6 @@ class RainbowBracesEditorListener : EditorFactoryListener {
             "glsl", "vert", "vsh", "tesc", "tese", "geom", "gsh", "frag", "fsh", "comp"
         )
 
-        private val PALETTE: Array<Color> = arrayOf(
-            JBColor(Color(0xC62828), Color(0xFF6B6B)),
-            JBColor(Color(0xAD1457), Color(0xFF4D9D)),
-            JBColor(Color(0x6A1B9A), Color(0xB388FF)),
-            JBColor(Color(0x283593), Color(0x82B1FF)),
-            JBColor(Color(0x1565C0), Color(0x4FC3F7)),
-            JBColor(Color(0x00695C), Color(0x64FFDA)),
-            JBColor(Color(0x2E7D32), Color(0xB9F6CA)),
-            JBColor(Color(0xF9A825), Color(0xFFE082)),
-        )
-
         private const val MAX_FILE_CHARS = 1_500_000
         private const val MARGIN = 6000
         private const val UPDATE_DELAY_MS = 80
@@ -140,7 +129,7 @@ class RainbowBracesEditorListener : EditorFactoryListener {
 
         for (m in marks) {
             val attrs = TextAttributes(
-                PALETTE[m.colorIndex % PALETTE.size],
+                MyPluginPalette.PALETTE[m.colorIndex % MyPluginPalette.PALETTE.size],
                 null, null, null,
                 Font.PLAIN
             )
@@ -214,7 +203,7 @@ class RainbowBracesEditorListener : EditorFactoryListener {
                     val c = text[i]
                     when (c) {
                         '{', '(', '[' -> {
-                            val color = stack.size % PALETTE.size
+                            val color = stack.size % MyPluginPalette.PALETTE.size
                             stack.addLast(Open(c, color))
                             if (i in rangeStart..rangeEnd) out.add(Mark(i, color))
                         }
@@ -285,7 +274,7 @@ class RainbowBracesEditorListener : EditorFactoryListener {
                     // --- braces ---
                     when (c) {
                         '{', '(', '[' -> {
-                            val color = stack.size % PALETTE.size
+                            val color = stack.size % MyPluginPalette.PALETTE.size
                             stack.addLast(Open(c, color))
                             if (i in rangeStart..rangeEnd) out.add(Mark(i, color))
                         }
