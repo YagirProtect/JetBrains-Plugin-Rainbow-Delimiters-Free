@@ -1,7 +1,9 @@
 ﻿package dev.yaro.rainbowbraces
 
 import com.intellij.lang.LanguageParserDefinitions
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.*
 import com.intellij.openapi.editor.ex.EditorEx
@@ -9,61 +11,68 @@ import com.intellij.openapi.editor.markup.HighlighterLayer
 import com.intellij.openapi.editor.markup.HighlighterTargetArea
 import com.intellij.openapi.editor.markup.RangeHighlighter
 import com.intellij.openapi.editor.markup.TextAttributes
+import com.intellij.openapi.editor.markup.EffectType
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileTypes.SyntaxHighlighterFactory
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.tree.TokenSet
-import com.intellij.ui.JBColor
 import com.intellij.util.Alarm
-import java.awt.Color
+import com.intellij.openapi.util.Disposer
 import java.awt.Font
 import java.awt.Point
 import kotlin.math.max
 import kotlin.math.min
 
+private data class Mark(val offset: Int, val colorIndex: Int)
+private data class Open(val ch: Char, val offset: Int, val colorIndex: Int)
+private data class PairMark(val offset: Int, val pairedOffset: Int, val colorIndex: Int)
+private data class DelimiterCache(
+    val marks: List<Mark> = emptyList(),
+    val pairsByOffset: Map<Int, PairMark> = emptyMap()
+)
+
 private data class EditorState(
     val highlighters: MutableList<RangeHighlighter>,
+    val emphasisHighlighters: MutableList<RangeHighlighter>,
     val alarm: Alarm,
+    val disposable: Disposable,
     val docListener: DocumentListener,
-    val visibleAreaListener: VisibleAreaListener
+    val visibleAreaListener: VisibleAreaListener,
+    val caretListener: CaretListener,
+    var cachedDocumentStamp: Long = -1,
+    var cachedPaletteSize: Int = -1,
+    var cachedDelimiters: DelimiterCache = DelimiterCache()
 )
 
 class RainbowBracesEditorListener : EditorFactoryListener {
 
     companion object {
+        private val LOG = Logger.getInstance(RainbowBracesEditorListener::class.java)
         private val STATE_KEY = Key.create<EditorState>("dev.yaro.rainbowbraces.state")
 
-        private val ENABLED_EXT = setOf(
-            "rs", "cs",
-            "java", "kt", "kts",
-            "c", "h", "cc", "cpp", "cxx", "hpp", "hxx",
-            "js", "ts", "jsx", "tsx",
-            "py", "go", "swift", "lua", "json", "hlsl", "shader", "php", "go"
-        )
+        private const val MAX_FILE_CHARS = 500_000
+        private const val MAX_LEXER_CHARS = 250_000
+        private const val MAX_VISIBLE_HIGHLIGHTERS = 2_000
+        private const val MARGIN = 3000
+        private const val UPDATE_DELAY_MS = 150
 
-        private val PALETTE: Array<Color> = arrayOf(
-            JBColor(Color(0xC62828), Color(0xFF6B6B)),
-            JBColor(Color(0xAD1457), Color(0xFF4D9D)),
-            JBColor(Color(0x6A1B9A), Color(0xB388FF)),
-            JBColor(Color(0x283593), Color(0x82B1FF)),
-            JBColor(Color(0x1565C0), Color(0x4FC3F7)),
-            JBColor(Color(0x00695C), Color(0x64FFDA)),
-            JBColor(Color(0x2E7D32), Color(0xB9F6CA)),
-            JBColor(Color(0xF9A825), Color(0xFFE082)),
-        )
-
-        private const val MAX_FILE_CHARS = 1_500_000
-        private const val MARGIN = 6000
-        private const val UPDATE_DELAY_MS = 80
+        fun refreshEditor(editor: Editor) {
+            val state = editor.getUserData(STATE_KEY) ?: return
+            state.cachedDocumentStamp = -1
+            RainbowBracesEditorListener().update(editor, state)
+        }
     }
 
     override fun editorCreated(event: EditorFactoryEvent) {
         val editor = event.editor
         if (!shouldEnable(editor)) return
 
-        val alarm = Alarm(Alarm.ThreadToUse.SWING_THREAD)
+        val disposable = Disposer.newDisposable("Rainbow Delimiters editor state")
+        val alarm = Alarm(Alarm.ThreadToUse.SWING_THREAD, disposable)
         val highlighters = mutableListOf<RangeHighlighter>()
+        val emphasisHighlighters = mutableListOf<RangeHighlighter>()
 
         val docListener = object : DocumentListener {
             override fun documentChanged(event: DocumentEvent) {
@@ -75,10 +84,25 @@ class RainbowBracesEditorListener : EditorFactoryListener {
             scheduleUpdate(editor, alarm)
         }
 
-        editor.document.addDocumentListener(docListener)
-        editor.scrollingModel.addVisibleAreaListener(visibleAreaListener)
+        val caretListener = object : CaretListener {
+            override fun caretPositionChanged(event: CaretEvent) {
+                updatePairEmphasis(editor)
+            }
+        }
 
-        val state = EditorState(highlighters, alarm, docListener, visibleAreaListener)
+        editor.document.addDocumentListener(docListener, disposable)
+        editor.scrollingModel.addVisibleAreaListener(visibleAreaListener)
+        editor.caretModel.addCaretListener(caretListener)
+
+        val state = EditorState(
+            highlighters,
+            emphasisHighlighters,
+            alarm,
+            disposable,
+            docListener,
+            visibleAreaListener,
+            caretListener
+        )
         editor.putUserData(STATE_KEY, state)
 
         scheduleUpdate(editor, alarm)
@@ -88,12 +112,13 @@ class RainbowBracesEditorListener : EditorFactoryListener {
         val editor = event.editor
         val state = editor.getUserData(STATE_KEY) ?: return
 
-        editor.document.removeDocumentListener(state.docListener)
         editor.scrollingModel.removeVisibleAreaListener(state.visibleAreaListener)
+        editor.caretModel.removeCaretListener(state.caretListener)
 
-        state.alarm.cancelAllRequests()
+        Disposer.dispose(state.disposable)
         state.highlighters.forEach { editor.markupModel.removeHighlighter(it) }
         state.highlighters.clear()
+        clearPairEmphasis(editor, state)
 
         editor.putUserData(STATE_KEY, null)
     }
@@ -105,7 +130,7 @@ class RainbowBracesEditorListener : EditorFactoryListener {
 
         val vf = FileDocumentManager.getInstance().getFile(doc) ?: return false
         val ext = vf.extension?.lowercase() ?: return false
-        if (ext !in ENABLED_EXT) return false
+        if (!RainbowSettingsService.getInstance().isEnabledForExtension(ext)) return false
 
         return true
     }
@@ -127,31 +152,126 @@ class RainbowBracesEditorListener : EditorFactoryListener {
     }
 
     private fun update(editor: Editor, state: EditorState) {
-        if (!shouldEnable(editor)) return
+        try {
+            if (!shouldEnable(editor)) {
+                clearHighlighters(editor, state)
+                return
+            }
 
-        val doc = editor.document
-        val (rangeStart, rangeEnd) = visibleOffsets(editor, doc.textLength)
+            val doc = editor.document
+            val (rangeStart, rangeEnd) = visibleOffsets(editor, doc.textLength)
 
-        val marks = computeMarksPreferLexer(editor, rangeStart, rangeEnd)
+            val palette = RainbowSettingsService.getInstance().activeColors()
+            val marks = cachedDelimiters(editor, state, palette.size).marks
+                .asSequence()
+                .filter { it.offset in rangeStart..rangeEnd }
+                .take(MAX_VISIBLE_HIGHLIGHTERS)
+                .toList()
 
+            clearHighlighters(editor, state)
+
+            for (m in marks) {
+                val attrs = TextAttributes(
+                    palette[m.colorIndex % palette.size],
+                    null, null, null,
+                    Font.PLAIN
+                )
+                val rh = editor.markupModel.addRangeHighlighter(
+                    m.offset,
+                    m.offset + 1,
+                    HighlighterLayer.ADDITIONAL_SYNTAX,
+                    attrs,
+                    HighlighterTargetArea.EXACT_RANGE
+                )
+                state.highlighters.add(rh)
+            }
+            updatePairEmphasis(editor)
+        } catch (e: ProcessCanceledException) {
+            throw e
+        } catch (t: Throwable) {
+            LOG.warn("Rainbow delimiters update failed", t)
+            clearHighlighters(editor, state)
+        }
+    }
+
+    private fun cachedDelimiters(editor: Editor, state: EditorState, paletteSize: Int): DelimiterCache {
+        val stamp = editor.document.modificationStamp
+        if (state.cachedDocumentStamp == stamp && state.cachedPaletteSize == paletteSize) {
+            return state.cachedDelimiters
+        }
+
+        val delimiters = computeMarksPreferLexer(editor, 0, editor.document.textLength, paletteSize)
+        state.cachedDocumentStamp = stamp
+        state.cachedPaletteSize = paletteSize
+        state.cachedDelimiters = delimiters
+        return delimiters
+    }
+
+    private fun clearHighlighters(editor: Editor, state: EditorState) {
         state.highlighters.forEach { editor.markupModel.removeHighlighter(it) }
         state.highlighters.clear()
+        clearPairEmphasis(editor, state)
+    }
 
-        for (m in marks) {
-            val attrs = TextAttributes(
-                PALETTE[m.colorIndex % PALETTE.size],
-                null, null, null,
-                Font.PLAIN
-            )
-            val rh = editor.markupModel.addRangeHighlighter(
-                m.offset,
-                m.offset + 1,
-                HighlighterLayer.ADDITIONAL_SYNTAX,
-                attrs,
-                HighlighterTargetArea.EXACT_RANGE
-            )
-            state.highlighters.add(rh)
+    private fun updatePairEmphasis(editor: Editor) {
+        val state = editor.getUserData(STATE_KEY) ?: return
+        try {
+            if (!shouldEnable(editor)) {
+                clearPairEmphasis(editor, state)
+                return
+            }
+            if (!RainbowSettingsService.getInstance().isPairEmphasisEnabled()) {
+                clearPairEmphasis(editor, state)
+                return
+            }
+
+            val palette = RainbowSettingsService.getInstance().activeColors()
+            val cache = cachedDelimiters(editor, state, palette.size)
+            val offset = matchingCandidateOffset(editor)
+            val pair = offset?.let { cache.pairsByOffset[it] }
+            clearPairEmphasis(editor, state)
+            if (pair == null) return
+
+            val color = palette[pair.colorIndex % palette.size]
+            state.emphasisHighlighters.add(addEmphasisHighlighter(editor, pair.offset, color))
+            state.emphasisHighlighters.add(addEmphasisHighlighter(editor, pair.pairedOffset, color))
+        } catch (e: ProcessCanceledException) {
+            throw e
+        } catch (t: Throwable) {
+            LOG.warn("Rainbow delimiters pair emphasis failed", t)
+            clearPairEmphasis(editor, state)
         }
+    }
+
+    private fun matchingCandidateOffset(editor: Editor): Int? {
+        val doc = editor.document
+        val caretOffset = editor.caretModel.offset
+        if (caretOffset < doc.textLength && isDelimiter(doc.charsSequence[caretOffset])) return caretOffset
+        val previous = caretOffset - 1
+        if (previous >= 0 && isDelimiter(doc.charsSequence[previous])) return previous
+        return null
+    }
+
+    private fun addEmphasisHighlighter(editor: Editor, offset: Int, color: java.awt.Color): RangeHighlighter {
+        val attrs = TextAttributes(
+            color,
+            null,
+            color,
+            EffectType.ROUNDED_BOX,
+            Font.BOLD
+        )
+        return editor.markupModel.addRangeHighlighter(
+            offset,
+            offset + 1,
+            HighlighterLayer.SELECTION - 1,
+            attrs,
+            HighlighterTargetArea.EXACT_RANGE
+        )
+    }
+
+    private fun clearPairEmphasis(editor: Editor, state: EditorState) {
+        state.emphasisHighlighters.forEach { editor.markupModel.removeHighlighter(it) }
+        state.emphasisHighlighters.clear()
     }
 
     private fun visibleOffsets(editor: Editor, docLen: Int): Pair<Int, Int> {
@@ -167,23 +287,19 @@ class RainbowBracesEditorListener : EditorFactoryListener {
         return a to b
     }
 
-    private data class Mark(val offset: Int, val colorIndex: Int)
-    private data class Open(val ch: Char, val colorIndex: Int)
-
-    private fun computeMarksPreferLexer(editor: Editor, rangeStart: Int, rangeEnd: Int): List<Mark> {
+    private fun computeMarksPreferLexer(editor: Editor, rangeStart: Int, rangeEnd: Int, paletteSize: Int): DelimiterCache {
         val doc = editor.document
         val text = doc.charsSequence
         val scanEnd = min(doc.textLength, rangeEnd)
 
         val project = editor.project
         val vf = FileDocumentManager.getInstance().getFile(doc)
-        if (project == null || vf == null) {
-            // чисто ручной режим
-            return computeMarksManual(text, scanEnd, rangeStart, rangeEnd)
+        if (project == null || vf == null || scanEnd > MAX_LEXER_CHARS) {
+            return computeMarksManual(text, scanEnd, rangeStart, rangeEnd, paletteSize)
         }
 
         val psiFile = PsiDocumentManager.getInstance(project).getPsiFile(doc)
-            ?: return computeMarksManual(text, scanEnd, rangeStart, rangeEnd)
+            ?: return computeMarksManual(text, scanEnd, rangeStart, rangeEnd, paletteSize)
 
         val language = psiFile.viewProvider.baseLanguage
         val parserDef = LanguageParserDefinitions.INSTANCE.forLanguage(language)
@@ -191,12 +307,13 @@ class RainbowBracesEditorListener : EditorFactoryListener {
         val stringTokens: TokenSet = parserDef?.stringLiteralElements ?: TokenSet.EMPTY
 
         val highlighter = SyntaxHighlighterFactory.getSyntaxHighlighter(language, project, vf)
-            ?: return computeMarksManual(text, scanEnd, rangeStart, rangeEnd)
+            ?: return computeMarksManual(text, scanEnd, rangeStart, rangeEnd, paletteSize)
 
         val lexer = highlighter.highlightingLexer
         lexer.start(text, 0, scanEnd)
 
         val out = ArrayList<Mark>(512)
+        val pairs = HashMap<Int, PairMark>()
         val stack = ArrayDeque<Open>()
 
         while (lexer.tokenType != null) {
@@ -213,13 +330,17 @@ class RainbowBracesEditorListener : EditorFactoryListener {
                     val c = text[i]
                     when (c) {
                         '{', '(', '[' -> {
-                            val color = stack.size % PALETTE.size
-                            stack.addLast(Open(c, color))
+                            val color = stack.size % paletteSize
+                            stack.addLast(Open(c, i, color))
                             if (i in rangeStart..rangeEnd) out.add(Mark(i, color))
                         }
                         '}', ')', ']' -> {
                             val open = if (stack.isNotEmpty() && matches(stack.last().ch, c)) stack.removeLast() else null
-                            if (open != null && i in rangeStart..rangeEnd) out.add(Mark(i, open.colorIndex))
+                            if (open != null) {
+                                pairs[open.offset] = PairMark(open.offset, i, open.colorIndex)
+                                pairs[i] = PairMark(i, open.offset, open.colorIndex)
+                                if (i in rangeStart..rangeEnd) out.add(Mark(i, open.colorIndex))
+                            }
                         }
                     }
                 }
@@ -228,15 +349,22 @@ class RainbowBracesEditorListener : EditorFactoryListener {
             lexer.advance()
         }
 
-        return out
+        return DelimiterCache(out, pairs)
     }
 
     private enum class Mode {
         CODE, LINE_COMMENT, BLOCK_COMMENT, STRING, CHAR, CS_VERBATIM, RUST_RAW
     }
 
-    private fun computeMarksManual(text: CharSequence, scanEnd: Int, rangeStart: Int, rangeEnd: Int): List<Mark> {
+    private fun computeMarksManual(
+        text: CharSequence,
+        scanEnd: Int,
+        rangeStart: Int,
+        rangeEnd: Int,
+        paletteSize: Int
+    ): DelimiterCache {
         val out = ArrayList<Mark>(512)
+        val pairs = HashMap<Int, PairMark>()
         val stack = ArrayDeque<Open>()
 
         var mode = Mode.CODE
@@ -284,13 +412,17 @@ class RainbowBracesEditorListener : EditorFactoryListener {
                     // --- braces ---
                     when (c) {
                         '{', '(', '[' -> {
-                            val color = stack.size % PALETTE.size
-                            stack.addLast(Open(c, color))
+                            val color = stack.size % paletteSize
+                            stack.addLast(Open(c, i, color))
                             if (i in rangeStart..rangeEnd) out.add(Mark(i, color))
                         }
                         '}', ')', ']' -> {
                             val open = if (stack.isNotEmpty() && matches(stack.last().ch, c)) stack.removeLast() else null
-                            if (open != null && i in rangeStart..rangeEnd) out.add(Mark(i, open.colorIndex))
+                            if (open != null) {
+                                pairs[open.offset] = PairMark(open.offset, i, open.colorIndex)
+                                pairs[i] = PairMark(i, open.offset, open.colorIndex)
+                                if (i in rangeStart..rangeEnd) out.add(Mark(i, open.colorIndex))
+                            }
                         }
                     }
 
@@ -345,8 +477,10 @@ class RainbowBracesEditorListener : EditorFactoryListener {
             }
         }
 
-        return out
+        return DelimiterCache(out, pairs)
     }
+
+    private fun isDelimiter(ch: Char): Boolean = ch == '{' || ch == '}' || ch == '(' || ch == ')' || ch == '[' || ch == ']'
 
     private fun matches(open: Char, close: Char): Boolean = when (open) {
         '{' -> close == '}'

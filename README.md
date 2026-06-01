@@ -30,7 +30,15 @@ A lightweight alternative to paid “rainbow brackets” plugins: it colors matc
 - Rainbow coloring for `()`, `[]`, `{}` by **nesting level**
 - Skips **strings** and **comments** when possible (lexer-based; falls back to a manual parser where needed)
 - Lightweight: highlights only the **visible area** (plus a small margin)
-- No settings required — works out of the box
+- Caches delimiter scans per document version to reduce scroll overhead
+- Enable/disable toggle in **Settings → Rainbow Delimiters**
+- Editable supported file extensions, so you choose where the plugin runs
+- Editable palettes with custom names for user-created palettes
+- Add, remove, reset, import, and export palette sets
+- Dynamic color count: add or remove color swatches directly in the palette
+- Click a color square to open the color picker; right-click a color square to remove it
+- Optional matching pair emphasis based on cached delimiter pairs
+- Built-in palettes plus custom palette copies
 
 ## Supported IDEs
 
@@ -40,7 +48,18 @@ This is a plain IntelliJ Platform plugin (editor-level highlighting), so it can 
 - Rider
 - IntelliJ IDEA / CLion / WebStorm / etc.
 
-Compatibility is controlled by the **build number range** injected into `plugin.xml` during build (`sinceBuild` / `untilBuild` in `patchPluginXml`).
+Compatibility is controlled by the **build number range** injected into `plugin.xml` during build (`sinceBuild` / `untilBuild` in `patchPluginXml`). Current build range is `251` through `261.*`, covering 2025.1 through 2026.1.
+
+## Settings
+
+Open **Settings → Rainbow Delimiters** to configure:
+
+- **Enabled**: turns all plugin highlighting on or off.
+- **Highlight matching pair**: highlights the bracket pair near the caret without rescanning the file.
+- **Extensions**: comma-separated file extensions where the plugin should run.
+- **Palettes**: select active palette, duplicate palettes, rename custom palettes, reset built-in palettes, and delete custom palettes.
+- **Colors**: click a color square to edit it, use the `+` square to add a color, or right-click a color square to remove it.
+- **Import / Export**: save or load palette sets as JSON.
 
 ## Supported file types
 
@@ -53,7 +72,7 @@ The plugin is enabled for common code extensions (you can change the list in cod
 - JS/TS: `.js`, `.ts`, `.jsx`, `.tsx`
 - Other: `.py`, `.go`, `.swift`, `lua`, `json`, `hlsl`, `shader`, `php`
 
-To customize: edit `ENABLED_EXT` in `src/main/kotlin/dev/yaro/rainbowbraces/RainbowBracesEditorListener.kt`.
+To customize: open **Settings → Rainbow Delimiters** and edit the supported extensions list.
 
 ## Installation
 

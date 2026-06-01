@@ -1,13 +1,14 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("java")
-    id("org.jetbrains.kotlin.jvm") version "2.1.20"
-    id("org.jetbrains.intellij.platform") version "2.10.2"
+    id("org.jetbrains.kotlin.jvm") version "2.2.21"
+    id("org.jetbrains.intellij.platform") version "2.16.0"
 }
 
 group = "com.yaro.rainbowdelimiters"
-version = "1.2.0"
+version = "1.4.6"
 
 repositories {
     mavenCentral()
@@ -15,11 +16,23 @@ repositories {
         defaultRepositories()
     }
 }
-val targetIde = (findProperty("targetIde") as String?) ?: "rider"
+
+val targetIde = ((findProperty("targetIde") as String?) ?: "rider").lowercase()
+val localIdePath = (findProperty("localIdePath") as String?)
+    ?: when (targetIde) {
+        "rider" -> findProperty("riderIdePath") as String?
+        "rustrover" -> findProperty("rustRoverIdePath") as String?
+        else -> null
+    }
+
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin.html
 dependencies {
     intellijPlatform {
-        rider("2024.1.3")
+        if (localIdePath != null) {
+            local(localIdePath)
+        } else {
+            rider("2026.1.2")
+        }
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
 
 
@@ -31,11 +44,16 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "252.25557"
+            sinceBuild = "251"
+            untilBuild = "261.*"
         }
 
         changeNotes = """
-            Initial version
+            Added editable palette names, dynamic palette size, color add/remove actions and palette import/export.
+            Added enable/disable toggle and editable supported file extensions.
+            Added optional matching pair emphasis without rescanning on caret movement.
+            Reduced editor overhead with cached delimiter scans and safer highlighter limits.
+            Targets IntelliJ Platform 2025.1 through 2026.1.
         """.trimIndent()
     }
 }
@@ -47,8 +65,8 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks {
     patchPluginXml {
-        sinceBuild.set("240")
-        untilBuild.set("253.*")
+        sinceBuild.set("251")
+        untilBuild.set("261.*")
     }
 }
 
@@ -57,7 +75,9 @@ kotlin {
 }
 
 tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions.jvmTarget = "17"
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
 }
 
 tasks.withType<JavaCompile>().configureEach {

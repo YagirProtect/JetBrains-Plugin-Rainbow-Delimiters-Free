@@ -4,7 +4,7 @@
         <vendor url="https://www.yagir.xyz">Yagir.inc</vendor>
     <depends>com.intellij.modules.lang</depends>
 
-    <idea-version since-build="243" until-build="253.*"/>
+    <idea-version since-build="251" until-build="261.*"/>
 
     <description><![CDATA[
       <b>Simplest</b> delimiter coloring free!
@@ -18,6 +18,9 @@
         <li>Rainbow coloring for <code>()[]{} </code> by nesting level</li>
         <li>Works in Rust, C#, Java, Kotlin, C/C++, JS/TS and more</li>
         <li>Skips strings and comments when possible (lexer-based)</li>
+        <li>Editable palettes with color picker, custom copies, import/export and dynamic color count</li>
+        <li>Enable/disable toggle and editable supported file extensions</li>
+        <li>Optional matching pair emphasis based on cached delimiter pairs</li>
         <li>Lightweight: highlights only visible area</li>
       </ul>
 
@@ -27,6 +30,9 @@
 
 
     <extensions defaultExtensionNs="com.intellij">
+        <applicationConfigurable
+                instance="dev.yaro.rainbowbraces.RainbowSettingsConfigurable"
+                displayName="Rainbow Delimiters"/>
         <editorFactoryListener implementation="dev.yaro.rainbowbraces.RainbowBracesEditorListener"/>
     </extensions>
 </idea-plugin>
