@@ -24,7 +24,7 @@ A lightweight alternative to paid “rainbow brackets” plugins: it colors matc
   <img src="screens/Screenshot1.png" width="49%">
   <img src="screens/Screenshot2.png" width="49%">
 </p>
-
+ <img src="screens/Screenshot3.png"  >
 ## Features
 
 - Rainbow coloring for `()`, `[]`, `{}` by **nesting level**
