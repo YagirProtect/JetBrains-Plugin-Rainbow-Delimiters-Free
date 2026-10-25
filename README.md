@@ -84,37 +84,6 @@ Open **Settings → Rainbow Delimiters** to configure:
 
 Moving the saturation and brightness sliders updates only the palette previews until **Apply** is pressed. **Reset** restores the saved settings, and closing the dialog with **Cancel** discards unsaved changes. Applied settings persist after restarting the IDE. The color sliders and transparency controls affect colored bracket guides; `case/default` guides retain the IDE theme's ordinary guide color.
 
-## Indent guide examples
-
-Multiline parameters use the color of their matching parentheses, even when the opening parenthesis is at the end of a declaration:
-
-```rust
-pub fn remap<I: ToF64, O: ToF64>(
-    value: I,
-    in_min: I,
-    in_max: I,
-    out_min: O,
-    out_max: O,
-) -> f64 {
-    // ...
-}
-```
-
-Switch branches without their own braces receive gray guides from the label to the end of the branch:
-
-```csharp
-switch (rpc)
-{
-    case AssignCharacterRpc when gameState == EGameState.Death:
-        ChangeGameState(EGameState.Game);
-        break;
-    default:
-        break;
-}
-```
-
-Stacked `case` labels share one guide for their body. Branches with explicit `{}` keep their colored brace guide. Lines follow editor indentation, tabs, folding and soft wraps, and continue through Code Vision usages/implementations hints.
-
 ## Supported file types
 
 The default extension list includes:
