@@ -1,0 +1,39 @@
+JetBrains IDE Linking Exception
+Additional permission under GNU GPL version 3, section 7
+
+Copyright (c) 2026 YagirProtect.
+
+Simple Rainbow Delimiters (the "Program") is licensed under version 3 of the
+GNU General Public License (GPLv3), whose text is provided in LICENSE, with
+the following additional permission granted by YagirProtect for the code
+for which YagirProtect holds copyright.
+
+If you link or combine the Program, or a modified version of it, with the
+IntelliJ Platform, a JetBrains IDE, or independent components and plugins
+provided for use with those IDEs, the copyright holder grants you additional
+permission to use and convey the resulting combination under the terms of
+GPLv3 for the Program and the respective licenses for those independent
+components, even when those licenses are not compatible with GPLv3.
+
+This permission applies to loading and running the Program as an IDE plugin
+and to its interaction with the IDE, its APIs, language support, lexers and
+other IDE plugins. Covered IDEs include IntelliJ IDEA, RustRover, Rider,
+CLion, PyCharm, WebStorm and other IDEs based on the IntelliJ Platform.
+
+The independent IDE components covered by this permission need not be
+licensed under GPLv3, and their source code need not be supplied as part of
+the Corresponding Source for the Program solely because of this combination.
+This exception does not excuse compliance with their respective licenses
+or grant any rights to their code, trademarks or other protected material.
+
+All other GPLv3 requirements continue to apply to the Program and to
+modifications of the Program, including the obligation to provide its
+Corresponding Source when conveying it in non-source form as required by
+GPLv3. This exception does not authorize distributing the Program or its
+modifications under a proprietary license, or excuse compliance with GPLv3
+for other third-party GPL-covered code.
+
+If you modify the Program, you may extend this exception to your version,
+but you are not obligated to do so. You may remove this additional permission
+as allowed by section 7 of GPLv3. This exception does not change the text of
+GPLv3 in LICENSE.

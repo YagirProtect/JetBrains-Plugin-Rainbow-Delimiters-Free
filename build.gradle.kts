@@ -1,3 +1,7 @@
+// Copyright (c) 2026 YagirProtect.
+// Licensed under GPL-3.0-only with the JetBrains IDE Linking Exception.
+// See LICENSE and LICENSE-EXCEPTION in the project root.
+
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
@@ -10,6 +14,13 @@ plugins {
 
 group = "com.yaro.rainbowdelimiters"
 version = "1.9.2"
+
+// Ship the GPL and its additional permission with every plugin binary.
+tasks.jar {
+    from(listOf("LICENSE", "LICENSE-EXCEPTION")) {
+        into("META-INF")
+    }
+}
 
 tasks.processResources {
     val buildVersion = project.version.toString()

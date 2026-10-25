@@ -166,4 +166,14 @@ build/distributions/*.zip
 
 Copyright (c) 2026 YagirProtect.
 
-Licensed under the [GNU General Public License v3.0](LICENSE) (SPDX: `GPL-3.0-only`).
+Licensed under the [GNU General Public License v3.0](LICENSE) with the
+[JetBrains IDE Linking Exception](LICENSE-EXCEPTION), an additional permission
+under GPLv3 section 7.
+
+The exception permits loading, linking and using the plugin with IntelliJ
+Platform IDEs and their independent components and plugins, including proprietary
+ones. The plugin itself and its modifications remain subject to GPLv3; the
+exception does not require those independent IDE components to become GPL-licensed.
+See LICENSE-EXCEPTION for the complete terms.
+
+Both license files are included in the distributed plugin JAR under META-INF.
