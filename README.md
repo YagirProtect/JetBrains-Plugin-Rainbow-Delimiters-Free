@@ -164,4 +164,6 @@ build/distributions/*.zip
 
 ## Open Source
 
-Licensed under the [MIT License](LICENSE).
+Copyright (c) 2026 YagirProtect.
+
+Licensed under the [GNU General Public License v3.0](LICENSE) (SPDX: `GPL-3.0-only`).
