@@ -163,4 +163,5 @@ build/distributions/*.zip
 >- Compatibility is declared through build `262.*` (2026.2). Later platform branches require compatibility checks before extending the range in `intellijPlatform.pluginConfiguration.ideaVersion`.
 
 ## Open Source
-MIT
+
+Licensed under the [MIT License](LICENSE).
