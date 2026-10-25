@@ -4,7 +4,7 @@
         <vendor url="https://www.yagir.xyz">Yagir.inc</vendor>
     <depends>com.intellij.modules.lang</depends>
 
-    <idea-version since-build="251" until-build="261.*"/>
+    <idea-version since-build="251" until-build="262.*"/>
 
     <description><![CDATA[
       <b>Simplest</b> delimiter coloring free!
@@ -19,8 +19,11 @@
         <li>Works in Rust, C#, Java, Kotlin, C/C++, JS/TS and more</li>
         <li>Skips strings and comments when possible (lexer-based)</li>
         <li>Editable palettes with color picker, custom copies, import/export and dynamic color count</li>
+        <li>Saturation and brightness controls with live light/dark palette previews</li>
         <li>Enable/disable toggle and editable supported file extensions</li>
         <li>Optional matching pair emphasis based on cached delimiter pairs</li>
+        <li>Indent guides in matching bracket colors for multiline {}, () and [] pairs (enabled by default, optional)</li>
+        <li>Theme-gray indent guides for switch case/default sections without braces in C#, C and C++</li>
         <li>Lightweight: highlights only visible area</li>
       </ul>
 
