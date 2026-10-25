@@ -7,28 +7,31 @@
     <idea-version since-build="251" until-build="262.*"/>
 
     <description><![CDATA[
-      <b>Simplest</b> delimiter coloring free!
+      <b>Simple, free and open-source rainbow delimiter highlighting.</b>
       <p>
         Rainbow coloring for <code>()</code>, <code>[]</code>, <code>{}</code> based on nesting level.<br/>
-        Works in multiple IDEs (RustRover, Rider, IntelliJ-based).
+        Available for JetBrains IDEs, including IntelliJ IDEA, RustRover, Rider and CLion.
       </p>
 
       <b>Features</b>
       <ul>
-        <li>Rainbow coloring for <code>()[]{} </code> by nesting level</li>
-        <li>Works in Rust, C#, Java, Kotlin, C/C++, JS/TS and more</li>
-        <li>Skips strings and comments when possible (lexer-based)</li>
-        <li>Editable palettes with color picker, custom copies, import/export and dynamic color count</li>
-        <li>Saturation and brightness controls with live light/dark palette previews</li>
-        <li>Enable/disable toggle and editable supported file extensions</li>
-        <li>Optional matching pair emphasis based on cached delimiter pairs</li>
-        <li>Indent guides in matching bracket colors for multiline {}, () and [] pairs (enabled by default, optional)</li>
-        <li>Theme-gray indent guides for switch case/default sections without braces in C#, C and C++</li>
-        <li>Lightweight: highlights only visible area</li>
+        <li>Rainbow colors for <code>()</code>, <code>[]</code> and <code>{}</code> by nesting level</li>
+        <li>Support for Rust, C#, Java, Kotlin, C/C++, JavaScript, TypeScript, GLSL and more, including C++ module extensions</li>
+        <li>Skips strings and comments using the IDE's language lexer when available, with a fallback scanner</li>
+        <li>Four built-in palettes, editable colors, custom palette copies and a configurable number of colors</li>
+        <li>JSON palette import/export with light and dark theme variants</li>
+        <li>Saturation and brightness controls with live previews directly in every palette's color swatches, using the current IDE theme</li>
+        <li>Optional matching-pair underlines that keep the caret visible between adjacent brackets</li>
+        <li>Optional colored indent guides for multiline bracket pairs, parameter lists and arrays; enabled by default</li>
+        <li>Separate active and inactive guide transparency controls: 0% active and 75% inactive by default. Select a bracket or place a caret next to it to activate its guide</li>
+        <li>Theme-gray guides for unbraced <code>case</code>/<code>default</code> sections in C#, C and C++</li>
+        <li>Guides account for tabs, folding, soft wraps and Code Vision hints, and replace corresponding native guides to avoid duplicates</li>
+        <li>Enable/disable toggle, editable file extensions and settings saved across IDE restarts. Updates preserve your saved extension selection; use Defaults to load the latest list</li>
+        <li>Viewport-limited highlighting with cached delimiter scans</li>
       </ul>
 
       <b>Open Source</b>
-      <a>https://github.com/YagirProtect/JetBrains-Plugin-Rainbow-Delimiters-Free</a>
+      <a href="https://github.com/YagirProtect/JetBrains-Plugin-Rainbow-Delimiters-Free">Source code on GitHub</a>
     ]]></description>
 
 
